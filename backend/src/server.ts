@@ -46,7 +46,7 @@ const corsOptions: cors.CorsOptions = {
 };
 
 /**
- * Middleware Setup
+ * Middleware ka Setup
  */
 
 // CORS - Allow frontend (different origin) to make requests
