@@ -15,7 +15,7 @@
     "express",
     "typescript"
   ],
-  "author": "Your Name",
+  "author": "Faizan Tariq",
   "license": "MIT",
   "dependencies": {
     "cors": "^2.8.5",
