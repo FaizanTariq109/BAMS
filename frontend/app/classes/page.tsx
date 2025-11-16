@@ -1,15 +1,17 @@
 // frontend/app/classes/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react"; // 1. Import useMemo
 import { useSearchParams } from "next/navigation";
 import { classAPI, departmentAPI } from "@/app/lib/api";
 import { Class, Department } from "@/app/lib/types";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Search } from "lucide-react"; // 2. Import Search icon
 import ClassCard from "../components/classes/ClassCard";
 import CreateClassModal from "../components/classes/CreateClassModal";
+import EditClassModal from "../components/classes/EditClassModal";
+import ConfirmDeleteModal from "../components/common/ConfirmDeleteModal";
 
-// Helper to create a map for quick name lookups
+// ... (createDeptNameMap helper)
 const createDeptNameMap = (depts: Department[]) => {
   return depts.reduce((acc, dept) => {
     acc[dept.id] = dept.name;
@@ -27,21 +29,28 @@ export default function ClassesPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 3. Add state for the search query
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // ... (modal states)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
 
   const fetchData = async () => {
+    // ... (existing fetchData logic)
     try {
       setLoading(true);
       setError(null);
-
-      // Fetch both departments and classes
       const [deptRes, classRes] = await Promise.all([
         departmentAPI.getAll(),
         departmentIdFilter
           ? classAPI.getByDepartment(departmentIdFilter)
           : classAPI.getAll(),
       ]);
-
       const depts = deptRes.data || [];
       setDepartments(depts);
       setDeptNameMap(createDeptNameMap(depts));
@@ -55,17 +64,52 @@ export default function ClassesPage() {
 
   useEffect(() => {
     fetchData();
-    // Refetch when filter changes
   }, [departmentIdFilter]);
 
+  // ... (existing modal handlers: handleSuccess, handleEditClick, etc)
   const handleSuccess = () => {
-    fetchData(); // Refetch the list after successful creation
+    fetchData();
+  };
+  const handleEditClick = (classToEdit: Class) => {
+    setSelectedClass(classToEdit);
+    setIsEditModalOpen(true);
+  };
+  const handleDeleteClick = (classToDelete: Class) => {
+    setSelectedClass(classToDelete);
+    setIsDeleteModalOpen(true);
+  };
+  const handleConfirmDelete = async () => {
+    if (!selectedClass) return;
+    setIsDeleting(true);
+    try {
+      await classAPI.delete(selectedClass.id);
+      setIsDeleteModalOpen(false);
+      setSelectedClass(null);
+      fetchData();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to delete class.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const filteredDeptName = departmentIdFilter
     ? deptNameMap[departmentIdFilter]
     : null;
 
+  // 4. Create a memoized list of filtered classes
+  const filteredClasses = useMemo(() => {
+    if (!searchQuery) {
+      return classes; // Return all if no search
+    }
+    return classes.filter(
+      (cls) =>
+        cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cls.code.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [classes, searchQuery]); // Re-run when classes or search query change
+
+  // 5. Update renderContent to use the filtered list
   const renderContent = () => {
     if (loading) {
       return (
@@ -80,6 +124,7 @@ export default function ClassesPage() {
     }
 
     if (classes.length === 0) {
+      // ... (existing empty state)
       return (
         <div className="text-center text-gray-500 py-10">
           <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
@@ -88,7 +133,7 @@ export default function ClassesPage() {
             Get started by creating your first class.
           </p>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsCreateModalOpen(true)}
             className="inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700"
           >
             <Plus className="w-5 h-5 mr-2" />
@@ -98,13 +143,29 @@ export default function ClassesPage() {
       );
     }
 
+    // New empty state for when search yields no results
+    if (filteredClasses.length === 0) {
+      return (
+        <div className="text-center text-gray-500 py-10">
+          <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-lg font-semibold">
+            No Classes Match Your Search
+          </h3>
+          <p className="text-sm mb-4">Try a different search query.</p>
+        </div>
+      );
+    }
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {classes.map((cls) => (
+        {/* Use filteredClasses here */}
+        {filteredClasses.map((cls) => (
           <ClassCard
             key={cls.id}
             class={cls}
             departmentName={deptNameMap[cls.departmentId]}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
           />
         ))}
       </div>
@@ -113,7 +174,8 @@ export default function ClassesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-lg shadow-md">
+      <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-lg shadow-md gap-4">
+        {/* Title */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             {filteredDeptName ? `${filteredDeptName} - Classes` : "All Classes"}
@@ -122,22 +184,51 @@ export default function ClassesPage() {
             Manage all classes in the system.
           </p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-md font-medium hover:bg-blue-700"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Create New
-        </button>
+
+        {/* 6. Add the Search Bar and Create Button */}
+        <div className="flex w-full md:w-auto space-x-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search by name or code..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          </div>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-md font-medium hover:bg-blue-700"
+          >
+            <Plus className="w-5 h-5 md:mr-2" />
+            <span className="hidden md:inline">Create New</span>
+          </button>
+        </div>
       </div>
 
       {renderContent()}
 
+      {/* Modals */}
       <CreateClassModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleSuccess}
-        departments={departments} // Pass the fetched departments to the modal
+        departments={departments}
+      />
+      <EditClassModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={handleSuccess}
+        classToEdit={selectedClass}
+      />
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        title="Delete Class"
+        message={`Are you sure you want to delete "${selectedClass?.name}"? This will add a "deleted" block to its chain. This action is immutable.`}
       />
     </div>
   );

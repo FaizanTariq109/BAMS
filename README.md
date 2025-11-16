@@ -90,7 +90,7 @@ Build frontend: npm run build
 Frontend: Vercel
 Backend: Render/Railway
 👨‍💻 Author
-[Your Name]
+[Faizan Tariq]
 
 📄 License
 MIT
