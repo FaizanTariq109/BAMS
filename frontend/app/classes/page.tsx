@@ -1,6 +1,7 @@
 // frontend/app/classes/page.tsx
 "use client";
-export const dynamic = "force-dynamic"; // <-- ADD THIS LINE
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState, useMemo } from "react"; // 1. Import useMemo
 import { useSearchParams } from "next/navigation";
 import { classAPI, departmentAPI } from "@/app/lib/api";
