@@ -45,7 +45,6 @@ const corsOptions: cors.CorsOptions = {
   optionsSuccessStatus: 200,
 };
 
-app.use(cors(corsOptions));
 /**
  * Middleware Setup
  */
@@ -53,12 +52,12 @@ app.use(cors(corsOptions));
 // CORS - Allow frontend (different origin) to make requests
 // WHY: Frontend runs on localhost:3000, backend on localhost:5000
 // Without CORS, browser blocks cross-origin requests
-app.use(
-  cors({
-    origin: "http://localhost:3000", // Allow Next.js frontend
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin: "http://localhost:3000", // Allow Next.js frontend
+//     credentials: true,
+//   })
+// );
 
 // JSON Parser - Parse JSON request bodies
 // WHY: Frontend sends data as JSON, we need to parse it
@@ -67,6 +66,7 @@ app.use(express.json());
 // URL Encoded Parser - Parse form data
 app.use(express.urlencoded({ extended: true }));
 
+app.use(cors(corsOptions));
 /**
  * Request Logger Middleware
  * WHY: Helpful for debugging
