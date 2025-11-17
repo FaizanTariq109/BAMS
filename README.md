@@ -91,7 +91,7 @@ Frontend: Vercel
 Backend: Render/Railway
 👨‍💻 Author
 [Faizan Tariq]
-![alt text](image.png)
+
 📄 License
 MIT
 
