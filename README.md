@@ -68,18 +68,17 @@ BAMS/
 
 Each attendance record becomes a block:
 
-```json
 {
-  "index": 1,
-  "timestamp": 1710000000,
-  "data": {
-    "studentId": "ST-001",
-    "classId": "CSE-01",
-    "status": "present"
-  },
-  "previousHash": "...",
-  "hash": "...",
-  "nonce": 28492
+"index": 1,
+"timestamp": 1710000000,
+"data": {
+"studentId": "ST-001",
+"classId": "CSE-01",
+"status": "present"
+},
+"previousHash": "...",
+"hash": "...",
+"nonce": 28492
 }
 
 Features:
@@ -98,7 +97,6 @@ PORT=5000
 DIFFICULTY=4
 NODE_ENV=development
 
-
 Run backend:
 npm run dev
 
@@ -108,7 +106,6 @@ http://localhost:5000
 🎨 Frontend Setup (Local)
 cd frontend
 npm install
-
 
 Create .env.local:
 NEXT_PUBLIC_API_URL=http://localhost:5000/api
@@ -139,7 +136,7 @@ GET /departments
 Create department
 POST /departments
 {
-  "name": "Computer Science"
+"name": "Computer Science"
 }
 
 📌 Classes
@@ -149,8 +146,8 @@ GET /classes
 Create class
 POST /classes
 {
-  "departmentId": "dep-123",
-  "name": "CS-101"
+"departmentId": "dep-123",
+"name": "CS-101"
 }
 
 📌 Students
@@ -163,20 +160,19 @@ DELETE /students/:id
 Mark attendance
 POST /attendance
 {
-  "studentId": "st-01",
-  "classId": "cs-01",
-  "status": "present"
+"studentId": "st-01",
+"classId": "cs-01",
+"status": "present"
 }
 
 📌 Validate Blockchain
 GET /validate
 
-
 Example response:
 
 {
-  "valid": true,
-  "chainLength": 18
+"valid": true,
+"chainLength": 18
 }
 
 🌐 Deployment Guide
@@ -194,13 +190,11 @@ Runtime: Node
 Build Command: npm install
 Start Command: npm start
 
-
 Add environment variables:
 
 PORT=10000
 DIFFICULTY=4
 NODE_ENV=production
-
 
 Deploy
 
@@ -238,4 +232,7 @@ MIT License
 
 Developed by Faizan Tariq — FAST NUCES (Software Engineering)
 Project: Blockchain-Based Attendance Management System (BAMS)
+
+```
+
 ```
