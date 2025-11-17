@@ -28,22 +28,24 @@ dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
-const allowedOrigins = [
-  "http://localhost:3000", // Your local frontend
-  "https://bams-wxoc.onrender.com", // LIVE VERCEL URL
-];
+app.use(cors());
 
-const corsOptions: cors.CorsOptions = {
-  origin: (origin, callback) => {
-    if (allowedOrigins.indexOf(origin!) !== -1 || !origin) {
-      // Allow if in the list or if it's not a browser (e.g., Postman)
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  optionsSuccessStatus: 200,
-};
+// const allowedOrigins = [
+//   "http://localhost:3000", // Your local frontend
+//   "https://bams-wxoc.onrender.com", // LIVE VERCEL URL
+// ];
+
+// const corsOptions: cors.CorsOptions = {
+//   origin: (origin, callback) => {
+//     if (allowedOrigins.indexOf(origin!) !== -1 || !origin) {
+//       // Allow if in the list or if it's not a browser (e.g., Postman)
+//       callback(null, true);
+//     } else {
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+//   optionsSuccessStatus: 200,
+// };
 
 /**
  * Middleware ka Setup
@@ -66,7 +68,7 @@ app.use(express.json());
 // URL Encoded Parser - Parse form data
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 /**
  * Request Logger Middleware
  * WHY: Helpful for debugging
