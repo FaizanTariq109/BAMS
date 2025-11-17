@@ -2,17 +2,16 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useMemo } from "react"; // 1. Import useMemo
+import { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { classAPI, departmentAPI } from "@/app/lib/api";
 import { Class, Department } from "@/app/lib/types";
-import { Users, Plus, Search } from "lucide-react"; // 2. Import Search icon
+import { Users, Plus, Search } from "lucide-react";
 import ClassCard from "../components/classes/ClassCard";
 import CreateClassModal from "../components/classes/CreateClassModal";
 import EditClassModal from "../components/classes/EditClassModal";
 import ConfirmDeleteModal from "../components/common/ConfirmDeleteModal";
 
-// ... (createDeptNameMap helper)
 const createDeptNameMap = (depts: Department[]) => {
   return depts.reduce((acc, dept) => {
     acc[dept.id] = dept.name;
@@ -20,7 +19,8 @@ const createDeptNameMap = (depts: Department[]) => {
   }, {} as { [key: string]: string });
 };
 
-export default function ClassesPage() {
+// Separate component that uses useSearchParams
+function ClassesContent() {
   const searchParams = useSearchParams();
   const departmentIdFilter = searchParams.get("departmentId");
 
@@ -30,11 +30,8 @@ export default function ClassesPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // 3. Add state for the search query
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ... (modal states)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -42,7 +39,6 @@ export default function ClassesPage() {
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
 
   const fetchData = async () => {
-    // ... (existing fetchData logic)
     try {
       setLoading(true);
       setError(null);
@@ -67,18 +63,20 @@ export default function ClassesPage() {
     fetchData();
   }, [departmentIdFilter]);
 
-  // ... (existing modal handlers: handleSuccess, handleEditClick, etc)
   const handleSuccess = () => {
     fetchData();
   };
+
   const handleEditClick = (classToEdit: Class) => {
     setSelectedClass(classToEdit);
     setIsEditModalOpen(true);
   };
+
   const handleDeleteClick = (classToDelete: Class) => {
     setSelectedClass(classToDelete);
     setIsDeleteModalOpen(true);
   };
+
   const handleConfirmDelete = async () => {
     if (!selectedClass) return;
     setIsDeleting(true);
@@ -98,19 +96,17 @@ export default function ClassesPage() {
     ? deptNameMap[departmentIdFilter]
     : null;
 
-  // 4. Create a memoized list of filtered classes
   const filteredClasses = useMemo(() => {
     if (!searchQuery) {
-      return classes; // Return all if no search
+      return classes;
     }
     return classes.filter(
       (cls) =>
         cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         cls.code.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [classes, searchQuery]); // Re-run when classes or search query change
+  }, [classes, searchQuery]);
 
-  // 5. Update renderContent to use the filtered list
   const renderContent = () => {
     if (loading) {
       return (
@@ -125,7 +121,6 @@ export default function ClassesPage() {
     }
 
     if (classes.length === 0) {
-      // ... (existing empty state)
       return (
         <div className="text-center text-gray-500 py-10">
           <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
@@ -144,7 +139,6 @@ export default function ClassesPage() {
       );
     }
 
-    // New empty state for when search yields no results
     if (filteredClasses.length === 0) {
       return (
         <div className="text-center text-gray-500 py-10">
@@ -159,7 +153,6 @@ export default function ClassesPage() {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Use filteredClasses here */}
         {filteredClasses.map((cls) => (
           <ClassCard
             key={cls.id}
@@ -176,7 +169,6 @@ export default function ClassesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-lg shadow-md gap-4">
-        {/* Title */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             {filteredDeptName ? `${filteredDeptName} - Classes` : "All Classes"}
@@ -186,7 +178,6 @@ export default function ClassesPage() {
           </p>
         </div>
 
-        {/* 6. Add the Search Bar and Create Button */}
         <div className="flex w-full md:w-auto space-x-2">
           <div className="relative flex-1">
             <input
@@ -210,7 +201,6 @@ export default function ClassesPage() {
 
       {renderContent()}
 
-      {/* Modals */}
       <CreateClassModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -232,5 +222,20 @@ export default function ClassesPage() {
         message={`Are you sure you want to delete "${selectedClass?.name}"? This will add a "deleted" block to its chain. This action is immutable.`}
       />
     </div>
+  );
+}
+
+// Main component wrapped in Suspense
+export default function ClassesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="text-center text-gray-500 py-10">
+          Loading classes...
+        </div>
+      }
+    >
+      <ClassesContent />
+    </Suspense>
   );
 }

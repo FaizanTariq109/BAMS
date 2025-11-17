@@ -1,19 +1,17 @@
 // frontend/app/students/page.tsx
 "use client";
-
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useMemo } from "react"; // 1. Import useMemo
+import { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { studentAPI, classAPI, departmentAPI } from "@/app/lib/api";
 import { Student, Class, Department } from "@/app/lib/types";
-import { GraduationCap, Plus, Search } from "lucide-react"; // 2. Import Search icon
+import { GraduationCap, Plus, Search } from "lucide-react";
 import StudentCard from "../components/students/StudentCard";
 import CreateStudentModal from "../components/students/CreateStudentModal";
 import EditStudentModal from "../components/students/EditStudentModal";
 import ConfirmDeleteModal from "../components/common/ConfirmDeleteModal";
 
-// ... (createNameMap helper)
 const createNameMap = (items: Array<{ id: string; name: string }>) => {
   return items.reduce((acc, item) => {
     acc[item.id] = item.name;
@@ -21,26 +19,24 @@ const createNameMap = (items: Array<{ id: string; name: string }>) => {
   }, {} as { [key: string]: string });
 };
 
-export default function StudentsPage() {
+// Separate component that uses useSearchParams
+function StudentsContent() {
   const searchParams = useSearchParams();
   const classIdFilter = searchParams.get("classId");
   const departmentIdFilter = searchParams.get("departmentId");
 
-  // All fetched data
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [allClasses, setAllClasses] = useState<Class[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
-
-  // 3. Add state for the search query
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ... (other state: maps, loading, error, modals)
   const [classNameMap, setClassNameMap] = useState<{ [key: string]: string }>(
     {}
   );
   const [deptNameMap, setDeptNameMap] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -48,7 +44,6 @@ export default function StudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   const fetchData = async () => {
-    // ... (existing fetchData logic)
     try {
       setLoading(true);
       setError(null);
@@ -73,18 +68,20 @@ export default function StudentsPage() {
     fetchData();
   }, []);
 
-  // ... (existing modal handlers: handleSuccess, handleEditClick, etc)
   const handleSuccess = () => {
     fetchData();
   };
+
   const handleEditClick = (student: Student) => {
     setSelectedStudent(student);
     setIsEditModalOpen(true);
   };
+
   const handleDeleteClick = (student: Student) => {
     setSelectedStudent(student);
     setIsDeleteModalOpen(true);
   };
+
   const handleConfirmDelete = async () => {
     if (!selectedStudent) return;
     setIsDeleting(true);
@@ -100,18 +97,15 @@ export default function StudentsPage() {
     }
   };
 
-  // 4. Create a memoized list of filtered students
   const filteredStudents = useMemo(() => {
     let students = allStudents;
 
-    // First, apply URL filters
     if (classIdFilter) {
       students = students.filter((s) => s.classId === classIdFilter);
     } else if (departmentIdFilter) {
       students = students.filter((s) => s.departmentId === departmentIdFilter);
     }
 
-    // Then, apply search query
     if (searchQuery) {
       students = students.filter(
         (student) =>
@@ -121,9 +115,8 @@ export default function StudentsPage() {
     }
 
     return students;
-  }, [allStudents, classIdFilter, departmentIdFilter, searchQuery]); // Re-run when any filter changes
+  }, [allStudents, classIdFilter, departmentIdFilter, searchQuery]);
 
-  // ... (pageTitle logic)
   const pageTitle = useMemo(() => {
     if (classIdFilter)
       return `${classNameMap[classIdFilter] || "Class"} - Students`;
@@ -132,7 +125,6 @@ export default function StudentsPage() {
     return "All Students";
   }, [classIdFilter, departmentIdFilter, classNameMap, deptNameMap]);
 
-  // 5. Update renderContent to use the filtered list
   const renderContent = () => {
     if (loading) {
       return (
@@ -146,7 +138,6 @@ export default function StudentsPage() {
       return <div className="text-center text-red-500 py-10">{error}</div>;
     }
 
-    // This is the "Empty State" from your screenshot
     if (allStudents.length === 0 && !classIdFilter && !departmentIdFilter) {
       return (
         <div className="text-center text-gray-500 py-10">
@@ -166,7 +157,6 @@ export default function StudentsPage() {
       );
     }
 
-    // New empty state for when search/filters yield no results
     if (filteredStudents.length === 0) {
       return (
         <div className="text-center text-gray-500 py-10">
@@ -183,7 +173,6 @@ export default function StudentsPage() {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Use filteredStudents here */}
         {filteredStudents.map((student) => (
           <StudentCard
             key={student.id}
@@ -201,7 +190,6 @@ export default function StudentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-lg shadow-md gap-4">
-        {/* Title */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{pageTitle}</h1>
           <p className="text-gray-600 mt-1">
@@ -209,7 +197,6 @@ export default function StudentsPage() {
           </p>
         </div>
 
-        {/* 6. Add the Search Bar and Create Button */}
         <div className="flex w-full md:w-auto space-x-2">
           <div className="relative flex-1">
             <input
@@ -233,7 +220,6 @@ export default function StudentsPage() {
 
       {renderContent()}
 
-      {/* All the modals */}
       <CreateStudentModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -256,5 +242,20 @@ export default function StudentsPage() {
         message={`Are you sure you want to delete "${selectedStudent?.name}"? This will add a "deleted" block to their personal chain. This action is immutable.`}
       />
     </div>
+  );
+}
+
+// Main component wrapped in Suspense
+export default function StudentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="text-center text-gray-500 py-10">
+          Loading students...
+        </div>
+      }
+    >
+      <StudentsContent />
+    </Suspense>
   );
 }
